@@ -1,6 +1,6 @@
 // src/routes/auth.routes.js
 const express = require('express');
-const { body, validationResult } = require('express-validator');
+const { body, header, validationResult } = require('express-validator');
 const { register, login, verificarToken } = require('../controllers/auth.controller');
 
 const router = express.Router();
@@ -19,18 +19,12 @@ const validateRequest = (req, res, next) => {
 router.post(
   '/register',
   [
-    body('nombre')
-      .notEmpty().withMessage('El nombre es obligatorio'),
-    body('email')
-      .isEmail().withMessage('Debe ser un email válido'),
-    body('password')
-      .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
-    body('sucursal_id')
-      .isNumeric().withMessage('El ID de sucursal debe ser numérico'),
-    body('vehiculo_id')
-      .isNumeric().withMessage('El ID de vehículo debe ser numérico'),
-    body('estado')
-      .notEmpty().withMessage('El estado es obligatorio')
+    body('nombre').notEmpty().withMessage('El nombre es obligatorio'),
+    body('email').isEmail().withMessage('Debe ser un email válido'),
+    body('password').isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
+    body('sucursal_id').isNumeric().withMessage('El ID de sucursal debe ser numérico'),
+    body('vehiculo_id').isNumeric().withMessage('El ID de vehículo debe ser numérico'),
+    body('estado').notEmpty().withMessage('El estado es obligatorio')
   ],
   validateRequest,
   register
@@ -40,19 +34,20 @@ router.post(
 router.post(
   '/login',
   [
-    body('email')
-      .isEmail().withMessage('Debe ser un email válido'),
-    body('password')
-      .notEmpty().withMessage('La contraseña es obligatoria')
+    body('email').isEmail().withMessage('Debe ser un email válido'),
+    body('password').notEmpty().withMessage('La contraseña es obligatoria')
   ],
   validateRequest,
   login
 );
 
+// Ruta de verificación del token, validando que el header "Authorization" no esté vacío
 router.post(
   '/verify',
   [
-    body('token').notEmpty().withMessage('El token es obligatorio')
+    header('authorization')
+      .notEmpty()
+      .withMessage('El token en la cabecera es obligatorio')
   ],
   validateRequest,
   verificarToken

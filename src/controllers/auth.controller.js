@@ -51,28 +51,37 @@ const login = async (req, res) => {
       process.env.JWTSECRET,
       { expiresIn: '1h' }
     );
-
+    res.set('Authorization', `Bearer ${token}`);
     // Enviamos el token al cliente
+    // res.json({
+    //   message: 'Token generado, envíalo para verificar el login',
+    //   token
+    // });
     res.json({
-      message: 'Token generado, envíalo para verificar el login',
-      token
+      message: 'Token generado y enviado en la cabecera'
     });
-
   } catch (error) {
     console.error('Error en login:', error);
     res.status(500).json({ message: 'Error en el servidor' });
   }
 };
 
-// 📌 Verificación del token recibido del cliente
+// Verificación del token recibido del cliente (puedes dejarlo igual o ajustar según tu flujo)
 const verificarToken = (req, res) => {
-  const { token } = req.body; // o puedes obtenerlo desde headers
-  if (!token) {
-    return res.status(400).json({ message: 'Token no proporcionado' });
+  // Ahora supongamos que el token se envía en el header "Authorization"
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(400).json({ message: 'Token no proporcionado en la cabecera' });
   }
+  // Se extrae el token del header (se espera formato "Bearer <token>")
+  const token = authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(400).json({ message: 'Token mal formado' });
+  }
+
   try {
     const decoded = jwt.verify(token, process.env.JWTSECRET);
-    return res.json({ message: 'Login exitoso', token });
+    return res.json({ message: 'Token verificado. Login exitoso'});
   } catch (error) {
     return res.status(401).json({ message: 'Token inválido o expirado' });
   }
