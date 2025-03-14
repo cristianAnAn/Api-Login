@@ -40,7 +40,9 @@ router.post(
   validateRequest,
   login
 );
-
+router.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
 // Ruta de verificación del token, validando que el header "Authorization" no esté vacío
 router.post(
   '/verify',

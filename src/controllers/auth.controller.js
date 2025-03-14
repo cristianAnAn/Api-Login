@@ -70,7 +70,9 @@ const login = async (req, res) => {
 
 // 📌 Verificación del token y envío de datos del usuario
 const verificarToken = async (req, res) => {
+  res.setHeader('Access-Control-Expose-Headers', 'Authorization');
   const authHeader = req.headers.authorization;
+  console.log('Authorization Header recibido:', authHeader); 
   if (!authHeader) {
     return res.status(400).json({ message: 'Token no proporcionado en la cabecera' });
   }
