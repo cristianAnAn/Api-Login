@@ -1,8 +1,9 @@
 // src/controllers/auth.controller.js
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { getRepartidorByEmail, createRepartidor } = require('../models/repartidor.model');
-// 📌 Registro de usuario (ya lo tienes)
+const { getRepartidorByEmail, createRepartidor, getRepartidorById } = require('../models/repartidor.model');
+
+// 📌 Registro de usuario
 const register = async (req, res) => {
   try {
     const { nombre, email, password, sucursal_id, vehiculo_id, estado } = req.body;
@@ -19,6 +20,7 @@ const register = async (req, res) => {
       nombre, email, hashedPassword, sucursal_id, vehiculo_id, estado
     );
 
+    // Excluimos la contraseña de la respuesta
     const { password: _, ...repartidorData } = newRepartidor;
     return res.status(201).json({
       message: 'Usuario registrado exitosamente',
@@ -51,14 +53,14 @@ const login = async (req, res) => {
       process.env.JWTSECRET,
       { expiresIn: '1h' }
     );
+    
+    // Configuramos la cabecera para exponer el token
+    res.setHeader('Access-Control-Expose-Headers', 'Authorization');
     res.set('Authorization', `Bearer ${token}`);
-    // Enviamos el token al cliente
-    // res.json({
-    //   message: 'Token generado, envíalo para verificar el login',
-    //   token
-    // });
+    
+    // Enviamos únicamente el mensaje, el token queda en la cabecera
     res.json({
-      message: 'Token generado y enviado en la cabecera'
+      message: 'Token generado'
     });
   } catch (error) {
     console.error('Error en login:', error);
@@ -66,22 +68,37 @@ const login = async (req, res) => {
   }
 };
 
-// Verificación del token recibido del cliente (puedes dejarlo igual o ajustar según tu flujo)
-const verificarToken = (req, res) => {
-  // Ahora supongamos que el token se envía en el header "Authorization"
+// 📌 Verificación del token y envío de datos del usuario
+const verificarToken = async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) {
     return res.status(400).json({ message: 'Token no proporcionado en la cabecera' });
   }
-  // Se extrae el token del header (se espera formato "Bearer <token>")
+
+  // Se espera el formato "Bearer <token>"
   const token = authHeader.split(' ')[1];
   if (!token) {
     return res.status(400).json({ message: 'Token mal formado' });
   }
 
   try {
+    // Verificamos y decodificamos el token
     const decoded = jwt.verify(token, process.env.JWTSECRET);
-    return res.json({ message: 'Token verificado. Login exitoso'});
+
+    // Obtenemos los datos del usuario a partir del ID contenido en el token
+    const repartidor = await getRepartidorById(decoded.id);
+    if (!repartidor) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Excluimos la contraseña de los datos a enviar
+    const { password, ...userData } = repartidor;
+
+    // Enviamos la respuesta con el mensaje y los datos del usuario
+    return res.json({
+      message: 'Token verificado. Login exitoso',
+      user: userData
+    });
   } catch (error) {
     return res.status(401).json({ message: 'Token inválido o expirado' });
   }
@@ -90,5 +107,5 @@ const verificarToken = (req, res) => {
 module.exports = {
   register,
   login,
-  verificarToken // Asegúrate de exportar la función
+  verificarToken
 };
